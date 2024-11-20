@@ -1,0 +1,20 @@
+# Archivos de estado de Terraform
+terraform.tfstate
+terraform.tfstate.backup
+
+# Directorio de caché y configuraciones específicas de Terraform
+.terraform/
+
+# Archivos de configuración de proveedores
+.terraformrc
+credentials.tfrc.json
+
+# Archivos de credenciales
+*.pem
+*.key
+
+# Archivos de plan de Terraform
+*.tfplan
+
+# Archivos de log y salida
+*.log

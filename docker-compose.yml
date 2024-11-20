@@ -1,0 +1,100 @@
+services:
+  gateway:
+    image: mcjsus/tiksup-gateway:1.0.5-alpine
+    env_file:
+      - .env
+    environment:
+      - SECRET_KEY=YjdkOGIwNzUtNDQwYy00YmVjLTlmNGUtNzBmYzlmMzU4MGQ4Cg==
+      - PORT=3000
+
+      - KAFKA_SERVER=161.132.40.126:9092
+      - KAFKA_TOPIC=tiksup-interactions
+
+      - REDIS_HOST=161.132.51.114
+      - REDIS_PORT=6379
+
+      - DB_NAME=tiksup
+      - DB_HOST=161.132.40.126
+      - DB_PORT=5432
+      - DB_USER=tiksup-super-admin
+      - DB_PASSWORD=tiksup-strong-password
+
+      - MONGO_HOST=161.132.40.126
+      - MONGO_PORT=27017
+      - MONGO_USER=tiksup-super-admin
+      - MONGO_PASSWORD=tiksup-strong-password
+      - MONGO_DATABASE=tiksup
+    ports:
+      - '3000:3000'
+
+  recommender:
+    image: mcjsus/tiksup-recommender:1.0.0
+    env_file:
+      - .env
+    environment:
+      - PORT=50052
+
+      - SPARK_HOST=161.132.51.114
+      - SPARK_PORT=7077
+
+      - REDIS_HOST=161.132.51.114
+      - REDIS_PORT=6379
+    ports:
+      - '50052:50052'
+
+  extractor-worker:
+    image: mcjsus/tiksup-extractor-worker:1.0.0-alpine
+    env_file:
+      - .env
+    environment:
+      - PORT=50051
+
+      - TARGET_GRPC_SERVER_HOST=recommender
+      - TARGET_GRPC_SERVER_PORT=50052
+
+      - REDIS_HOST=161.132.40.126
+      - REDIS_PORT=6379
+      - REDIS_PASSWORD=
+
+      - MONGO_HOST=161.132.40.126
+      - MONGO_PORT=27017
+      - MONGO_DATABASE=tiksup
+      - MONGO_USER=tiksup-super-admin
+      - MONGO_PASSWORD=tiksup-strong-password
+    ports:
+      - '50051:50051'
+    depends_on:
+      - recommender
+
+  kafka-worker:
+    image: mcjsus/tiksup-kafka-worker:1.0.0-alpine
+    env_file:
+      - .env
+    environment:
+      - TARGET_GRPC_SERVER_HOST=extractor-worker
+      - TARGET_GRPC_SERVER_PORT=50051
+
+      - KAFKA_SERVER=161.132.40.126:9092
+      - KAFKA_TOPIC=tiksup-interactions
+
+      - MONGO_HOST=161.132.40.126
+      - MONGO_PORT=27017
+      - MONGO_DATABASE=tiksup
+      - MONGO_USER=tiksup-super-admin
+      - MONGO_PASSWORD=tiksup-strong-password
+
+      - REDIS_HOST=161.132.40.126
+      - REDIS_PORT=6379
+      - REDIS_PASSWORD=
+    depends_on:
+      - extractor-worker
+
+  client:
+    image: mcjsus/tiksup-client:1.0.1-alpine
+    env_file:
+      - .env
+    environment:
+      - PORT=3000
+      - GATEWAY_URL=http://gateway:3000
+    ports:
+      - '80:3000'
